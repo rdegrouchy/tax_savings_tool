@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 st.title("Tax-Advantaged Savings Impact Tool")
 st.write("""
 This tool calculates how changes in employee participation and contributions to tax-advantaged savings accounts
-(such as 401(k) or HSA) impact federal taxes for employees and payroll taxes for employers.
+(such as FSAs) impact federal taxes for employees and payroll taxes for employers.
 """)
 
 # Sidebar Inputs
@@ -15,7 +15,9 @@ st.sidebar.header("Input Parameters")
 num_employees = st.sidebar.number_input("Number of Employees", value=100, step=10)
 avg_income = st.sidebar.number_input("Average Annual Income ($)", value=50000, step=1000)
 participation_rate = st.sidebar.slider("Participation Rate (%)", 0, 100, 50) / 100
-contribution_rate = st.sidebar.slider("Contribution Rate (%)", 0, 15, 5) / 100
+
+# Fixed Contribution Amount per Employee
+fsa_contribution = st.sidebar.number_input("FSA Contribution per Employee ($)", value=3000, step=100)
 
 # Tax Constants
 marginal_tax_rate = 0.22  # Federal marginal tax rate (example)
@@ -23,42 +25,81 @@ fica_rate = 0.0765        # Employer payroll tax rate
 
 # Calculations
 participants = int(num_employees * participation_rate)
-total_contributions = participants * avg_income * contribution_rate
-reduced_taxable_income = avg_income - (avg_income * contribution_rate)
+total_contributions = participants * fsa_contribution
+reduced_taxable_income = avg_income - fsa_contribution
 
-employee_tax_savings = participants * (avg_income * marginal_tax_rate - reduced_taxable_income * marginal_tax_rate)
-employer_tax_savings = participants * (avg_income * fica_rate - reduced_taxable_income * fica_rate)
+# Employee Tax Savings
+employee_tax_savings = participants * fsa_contribution * marginal_tax_rate
+
+# Employer Tax Savings
+employer_tax_savings = participants * fsa_contribution * fica_rate
 
 # Results
 st.write(f"### Results for {num_employees} Employees:")
 st.write(f"- **Total Employee Tax Savings**: ${employee_tax_savings:,.2f}")
 st.write(f"- **Total Employer Payroll Tax Savings**: ${employer_tax_savings:,.2f}")
-st.write(f"- **Total Contributions to Tax-Advantaged Accounts**: ${total_contributions:,.2f}")
+st.write(f"- **Total Contributions to FSAs**: ${total_contributions:,.2f}")
 
 # Visualization
-st.write("### Visualization of Savings by Contribution Rate")
+st.write("### Visualization of Savings by Contribution Amount")
 fig, ax = plt.subplots()
-contribution_rates = np.linspace(0, 0.15, 100)
+
+# Simulate Savings for Different Contribution Amounts
+contribution_amounts = np.arange(0, 4000, 100)  # Contribution amounts up to $4000
 savings = [
     (
-        cr,
-        participants * avg_income * marginal_tax_rate * cr,
-        participants * avg_income * fica_rate * cr,
+        amount,
+        participants * amount * marginal_tax_rate,
+        participants * amount * fica_rate,
     )
-    for cr in contribution_rates
+    for amount in contribution_amounts
 ]
 
 df = pd.DataFrame(
-    savings, columns=["Contribution Rate", "Employee Tax Savings", "Employer Tax Savings"]
+    savings, columns=["Contribution Amount", "Employee Tax Savings", "Employer Tax Savings"]
 )
-ax.plot(df["Contribution Rate"], df["Employee Tax Savings"], label="Employee Tax Savings")
-ax.plot(df["Contribution Rate"], df["Employer Tax Savings"], label="Employer Tax Savings")
-ax.set_xlabel("Contribution Rate")
+ax.plot(df["Contribution Amount"], df["Employee Tax Savings"], label="Employee Tax Savings")
+ax.plot(df["Contribution Amount"], df["Employer Tax Savings"], label="Employer Tax Savings")
+ax.set_xlabel("Contribution Amount ($)")
 ax.set_ylabel("Savings ($)")
 ax.legend()
 st.pyplot(fig)
 
 st.write("""
-Use the sliders on the left to adjust participation and contribution rates and see the impact
+Use the sliders on the left to adjust participation and contribution amounts to see their impact
+on employee and employer tax savings.
+""")
+
+st.write(f"- **Total Employee Tax Savings**: ${employee_tax_savings:,.2f}")
+st.write(f"- **Total Employer Payroll Tax Savings**: ${employer_tax_savings:,.2f}")
+st.write(f"- **Total Contributions to FSAs**: ${total_contributions:,.2f}")
+
+# Visualization
+st.write("### Visualization of Savings by Contribution Amount")
+fig, ax = plt.subplots()
+
+# Simulate Savings for Different Contribution Amounts
+contribution_amounts = np.arange(0, 4000, 100)  # Contribution amounts up to $4000
+savings = [
+    (
+        amount,
+        participants * amount * marginal_tax_rate,
+        participants * amount * fica_rate,
+    )
+    for amount in contribution_amounts
+]
+
+df = pd.DataFrame(
+    savings, columns=["Contribution Amount", "Employee Tax Savings", "Employer Tax Savings"]
+)
+ax.plot(df["Contribution Amount"], df["Employee Tax Savings"], label="Employee Tax Savings")
+ax.plot(df["Contribution Amount"], df["Employer Tax Savings"], label="Employer Tax Savings")
+ax.set_xlabel("Contribution Amount ($)")
+ax.set_ylabel("Savings ($)")
+ax.legend()
+st.pyplot(fig)
+
+st.write("""
+Use the sliders on the left to adjust participation and contribution amounts to see their impact
 on employee and employer tax savings.
 """)
